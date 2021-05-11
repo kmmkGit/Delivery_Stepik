@@ -14,5 +14,4 @@ class Config:
 # "postgresql+psycopg2://postgres:Maxim@127.0.0.1:5432/postgresdb"
 # os.environ.get("DATABASE_URL")
 # 'sqlite:///my_delivery.db'
-# app.secret_key = os.urandom(40)
 # app.config['SQLALCHEMY_ECHO'] = True
