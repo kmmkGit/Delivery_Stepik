@@ -8,4 +8,5 @@ with app.app_context():
         for item in category.dishes:
             print(item.title, end=", ")
         print()
-
+    for category in category_all:
+        print("Номер ", category.id, "Категория ", category.title)

@@ -1,76 +1,108 @@
 from functools import wraps
+import random
 
-from flask import abort, flash, session, redirect, request, render_template
+from flask import abort, flash, session, redirect, request, render_template, url_for
+from sqlalchemy.sql.functions import current_user
+from sqlalchemy.sql import func
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from app import app, db
+from app import app, db, manager
 from models import User, Dish, Category, Order
-from forms import LoginForm, RegistrationForm, ChangePasswordForm
+from forms import OrderForm, RegisterForm, LoginForm
 
 
-@app.route('/')
+@manager.user_loader
+def load_user(user_id):
+    return db.session.query(User).get(user_id)
+
+
 # главная
+@app.route('/')
 def view_main():
-    return render_template('main.html')
+    category = db.session.query(Category).all()
+
+#    dishes = [dish for dish in category.dishes]
+    return render_template('main.html', category=category)
 
 
-@app.route('/cart/', methods=["POST", "GET"])
 # корзина
+@app.route('/cart/', methods=["POST", "GET"])
 def view_cart():
-    form = SortTeachers()
-    teachers_query = db.session.query(Teacher)
-    teachers_sort = []
-    if request.method == 'POST':
-        sort_type = form.sort_type.data
-        if sort_type == form.sort_type.choices[0][0]:
-            teachers_sort = teachers_query.order_by(func.random()).all()
-        if sort_type == form.sort_type.choices[1][0]:
-            teachers_sort = teachers_query.order_by(Teacher.rating.desc()).all()
-        if sort_type == form.sort_type.choices[2][0]:
-            teachers_sort = teachers_query.order_by(Teacher.price.desc()).all()
-        if sort_type == form.sort_type.choices[3][0]:
-            teachers_sort = teachers_query.order_by(Teacher.price).all()
-    else:
-        teachers_sort = teachers_query.all()
+    form = OrderForm()
+    dish = db.session.query(Dish).filter(Dish.id.in_(session["cart"]))
+    if request.method == "POST" and form.validate_on_submit() and current_user.is_authenticated:
+        if not dish:
+            flash('Вы ничего не выбрали')
+            return render_template('cart.html', form=form)
+        order = Order(
+            total=sum(dish_item.price for dish_item in dish),
+            status="good",
+            phone=form.phone.data,
+            address=form.address.data,
+            user=db.session.query(User).get(current_user.get_id()),
+            dish=dish.all()
+        )
+        db.session.add(order)
+        db.session.commit()
+        session.pop('cart', None)
+        return redirect(url_for('ordered_view'))
     return render_template('cart.html', form=form)
 
 
-@app.route('/account/', methods=["POST", "GET"])
 # личный кабинет
+@app.route('/account/', methods=["POST", "GET"])
+@login_required
 def view_account():
+    orders = db.session.query(Order).filter(Order.user_id == current_user.get_id())
+    return render_template('account.html', orders=orders)
 
-    return render_template('account.html')
 
-
-@app.route('/auth/', methods=["POST", "GET"])
 # аутентификация
+@app.route('/auth/', methods=["POST", "GET"])
 def view_auth():
 
     return render_template('auth.html')
 
 
-@app.route('/register/', methods=["POST", "GET"])
 # регистрация
+@app.route('/register/', methods=["POST", "GET"])
 def view_register():
 
     return render_template('register.html')
 
 
+# выход
 @app.route('/logout/', methods=["POST", "GET"])
-# регистрация
 def view_logout():
 
     return render_template('logout.html')
 
 
+# подтверждение отправки
 @app.route('/ordered/', methods=["POST", "GET"])
-# регистрация
 def view_ordered():
 
     return render_template('ordered.html')
 
 
-@app.route('/addtocart/', methods=["POST", "GET"])
-# регистрация
-def view_addtocart():
+# добавление в корзину
+@app.route('/addtocart/<int:dish_id>/')
+def view_addtocart(dish_id):
+    dish = db.session.query(Dish).get_or_404(dish_id)
+    cart = session.get("cart", [])
+    if dish_id not in cart:
+        cart.append(dish_id)
+        session["cart"] = cart
+    flash('Товар добавлен в корзину')
+    return redirect(url_for('view_cart'))
 
-    return render_template('addtocart.html')
+
+# удаление из корзины
+@app.route('/delfromcart/<int:dish_id>/')
+def view_delfromcart(dish_id):
+    if dish_id in session["cart"]:
+        session["cart"].remove(dish_id)
+        flash('Товар удалён из корзины')
+    else:
+        flash('Такого товара нет в корзине')
+    return redirect(url_for('view_cart'))
