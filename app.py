@@ -14,7 +14,8 @@ app.config.from_object(Config)
 
 db.init_app(app)
 migrate = Migrate(app, db)
-manager = LoginManager(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'view_login'
 admin.init_app(app)
 
 

@@ -5,12 +5,12 @@ from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql import func
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app import app, db, manager
+from app import app, db, login_manager
 from models import User, Dish, Category, Order
 from forms import OrderForm, RegisterForm, LoginForm
 
 
-@manager.user_loader
+@login_manager.user_loader
 def load_user(user_id):
     return db.session.query(User).get(user_id)
 
@@ -108,14 +108,16 @@ def view_login():
             return redirect(url_for("view_main"))
         else:
             form.email.errors.append("Неверно введено имя или пароль")
+            return redirect(url_for("view_login"))
     return render_template("login.html", form=form)
 
 
 # выход
 @app.route('/logout/', methods=["POST", "GET"])
+@login_required
 def view_logout():
     logout_user()
-    return redirect(url_for("view_main"))
+    return redirect(url_for("view_login"))
 
 
 """
@@ -162,3 +164,7 @@ def filter_shuffle(seq, num_first, num_end):
 def filter_datetime(value, format_date="%d %b"):
     return "" if value is None else value.strftime(format_date)
 
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.query(User).get(user_id)
