@@ -1,23 +1,38 @@
-import re
-
 from flask_wtf import FlaskForm
 from wtforms import StringField
-from wtforms import RadioField
+from wtforms import PasswordField
 from wtforms import SubmitField
 from wtforms import HiddenField
-from wtforms import SelectField
-from wtforms.validators import InputRequired, Length
+from wtforms.validators import InputRequired, DataRequired, Length, Email
+import email_validator
 
 
 class OrderForm(FlaskForm):
-    name = StringField("Вас зовут", [InputRequired(message="Необходимо указать имя"),
-                                     Length(min=2, max=50, message="Имя %(min)d - %(max)d символов")])
-    phone = StringField("Ваш телефон", [InputRequired(message="Необходимо ввести ваш номер телефона"),
-                                        Length(max=15, message="Слишком много символов в номере телефона")])
-    submit = SubmitField('Записаться на пробный урок')
-    weekday = HiddenField("День недели для записи")
-    time = HiddenField("Часы занятий для записи")
-    teacher = HiddenField("Id учителя")
+    name = StringField("Имя", [InputRequired(message="Необходимо указать имя")])
+    address = StringField("Адрес", [InputRequired(message="Необходимо ввести ваш адрес")])
+    phone = StringField("Ваш телефон", [InputRequired(message="Необходимо ввести ваш номер телефона")])
+    submit = SubmitField('Оформить заказ')
 
 
+class RegisterForm(FlaskForm):
+    email = StringField("Электропочта", [
+        Email(message="Необходимо указать почту"),
+        InputRequired(message="Необходимо указать почту"),
+    ])
+    password = PasswordField("Пароль", [
+        InputRequired(message="Необходимо ввести ваш пароль"),
+        Length(min=5, message="Слишком мало символов в пароле, минимум 5")
+    ])
+    submit = SubmitField('Зарегистрироваться')
 
+
+class LoginForm(FlaskForm):
+    email = StringField("Электропочта", [
+        Email(message="Необходимо указать почту"),
+        InputRequired(message="Необходимо указать почту"),
+    ])
+    password = PasswordField("Пароль", [
+        InputRequired(message="Необходимо ввести ваш пароль"),
+        Length(min=5, message="Слишком мало символов в пароле, минимум 5")
+    ])
+    submit = SubmitField('Войти')

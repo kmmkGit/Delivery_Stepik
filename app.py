@@ -1,14 +1,15 @@
 from flask import Flask
 from flask_migrate import Migrate
+from flask_login import LoginManager
+from flask_wtf import CSRFProtect
 
 from config import Config
-from models import db, User, Dish, Category, Order
+from models import db
 from admin import admin
-
-# from forms import LoginForm, RegistrationForm, ChangePasswordForm
 
 
 app = Flask(__name__)
+csrf = CSRFProtect(app)
 app.config.from_object(Config)
 
 db.init_app(app)
