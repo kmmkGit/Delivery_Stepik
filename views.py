@@ -101,11 +101,11 @@ def view_login():
         user = db.session.query(User).filter(User.email == form.email.data).scalar()
         if user and check_password_hash(user.password, form.password.data):
             login_user(user)
-            next_page = request.args.get("next")
-            if next_page:
-                return redirect(next_page)
-            else:
-                return redirect(url_for("view_main"))
+#            next_page = request.args.get("next")
+#            if next_page:
+#                return redirect(next_page)
+#            else:
+            return redirect(url_for("view_main"))
         else:
             form.email.errors.append("Неверно введено имя или пароль")
     return render_template("login.html", form=form)
