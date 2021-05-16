@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import pytz
-from werkzeug.security import generate_password_hash, check_password_hash
+
 
 db = SQLAlchemy()
 
@@ -14,17 +14,6 @@ class User(db.Model):
     password = db.Column(db.String(), nullable=False)
     is_admin = db.Column(db.Boolean(), server_default="false", nullable=False)
     orders = db.relationship("Order", back_populates="user")
-
-    @property
-    def password(self):
-        raise AttributeError("Вам не нужно знать пароль")
-
-    @password.setter
-    def password(self, password):
-        self.password = generate_password_hash(password)
-
-    def password_valid(self, password):
-        return check_password_hash(self.password, password)
 
 
 class Category(db.Model):
@@ -73,7 +62,7 @@ class Order(db.Model):
     status = db.Column(db.String(100))
     phone = db.Column(db.String(15))
     address = db.Column(db.String(255))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     user = db.relationship(
         "User", back_populates="orders"
     )

@@ -3,6 +3,7 @@ import random
 from flask import flash, session, redirect, request, render_template, url_for
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql import func
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import app, db, manager
 from models import User, Dish, Category, Order
@@ -79,17 +80,16 @@ def view_account():
 @app.route('/register/', methods=["POST", "GET"])
 def view_register():
     form = RegisterForm()
-#    print('Register method ', request.method)
-#    print(form.email.data, form.password.data)
-#    print(form.validate_on_submit())
     if request.method == "POST" and form.validate_on_submit():
         if db.session.query(User).filter(User.email == form.email.data).scalar():
             form.email.errors.append("Такой пользователь уже зарегистрирован")
             return render_template("register.html", form=form)
-        user = User(email=form.email.data, password=form.password.data)
+        user = User(
+            email=form.email.data,
+            password=generate_password_hash(form.password.data)
+        )
         db.session.add(user)
         db.session.commit()
-        print('Register Yes')
         return redirect(url_for("view_login"))
     return render_template('register.html', form=form)
 
@@ -99,7 +99,7 @@ def view_login():
     form = LoginForm()
     if request.method == "POST" and form.validate_on_submit():
         user = db.session.query(User).filter(User.email == form.email.data).scalar()
-        if user:
+        if user and check_password_hash(user.password, form.password.data):
             login_user(user)
             next_page = request.args.get("next")
             if next_page:
