@@ -97,6 +97,8 @@ def view_register():
 @app.route('/login/', methods=["POST", "GET"])
 def view_login():
     form = LoginForm()
+    if current_user.is_authenticated:
+        return redirect(url_for('view_cart'))
     if request.method == "POST" and form.validate_on_submit():
         user = db.session.query(User).filter(User.email == form.email.data).scalar()
         if user and check_password_hash(user.password, form.password.data):
